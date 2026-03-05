@@ -403,9 +403,7 @@
 }
 
 .start-voting-section {
-    margin-top: 1.25rem;
-    padding-top: 1.25rem;
-    border-top: 1px solid var(--border);
+    margin-top: 1.5rem;
 }
 
 .start-voting-btn {

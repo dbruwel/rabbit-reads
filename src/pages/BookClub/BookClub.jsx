@@ -443,14 +443,6 @@ const BookClub = () => {
                         <p>✓ All members have nominated!</p>
                       </div>
                     )}
-
-                    {nominations.length > 0 && (
-                      <div className="start-voting-section">
-                        <button onClick={handleStartVoting} className="start-voting-btn">
-                          Start Voting ({nominations.length} nomination{nominations.length !== 1 ? 's' : ''})
-                        </button>
-                      </div>
-                    )}
                   </div>
 
                   {/* Nomination Status */}
@@ -636,6 +628,15 @@ const BookClub = () => {
                 </p>
               </div>
             </section>
+
+            {/* Start Voting Button - only shown during nominations phase */}
+            {!isVotingOpen && nominations.length > 0 && (
+              <div className="start-voting-section">
+                <button onClick={handleStartVoting} className="start-voting-btn">
+                  Start Voting ({nominations.length} nomination{nominations.length !== 1 ? 's' : ''})
+                </button>
+              </div>
+            )}
           </>
         )}
       </main>
