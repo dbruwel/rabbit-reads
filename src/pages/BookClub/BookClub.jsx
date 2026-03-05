@@ -41,7 +41,7 @@ const BookClub = () => {
 
   const handlePasswordSubmit = (e) => {
     e.preventDefault();
-    if (passwordInput === 'password') {
+    if (passwordInput === 'carrots314') {
       localStorage.setItem('rabbitReadersAuth', 'true');
       setIsAuthenticated(true);
       setPasswordError(false);
