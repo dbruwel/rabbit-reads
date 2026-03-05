@@ -46,6 +46,40 @@
     color: var(--text-primary);
     font-family: 'Georgia', 'Times New Roman', serif;
     transition: background 0.3s ease, color 0.3s ease;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+}
+
+/* Pull-to-refresh styles */
+.pull-indicator {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+    transition: height 0.2s ease-out, opacity 0.2s ease-out;
+    color: var(--text-secondary);
+    font-size: 0.9rem;
+    gap: 4px;
+}
+
+.pull-spinner {
+    font-size: 1.5rem;
+    display: inline-block;
+}
+
+.pull-spinner.spinning {
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    from {
+        transform: rotate(0deg);
+    }
+
+    to {
+        transform: rotate(360deg);
+    }
 }
 
 /* Header */

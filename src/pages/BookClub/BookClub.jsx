@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import './BookClub.css';
 
 // ===========================================
@@ -32,6 +32,12 @@ const BookClub = () => {
     const saved = localStorage.getItem('rabbitReadersDarkMode');
     return saved !== null ? JSON.parse(saved) : false;
   });
+
+  // Pull-to-refresh state
+  const [pullDistance, setPullDistance] = useState(0);
+  const [isRefreshing, setIsRefreshing] = useState(false);
+  const touchStartY = useRef(0);
+  const containerRef = useRef(null);
 
   // Save dark mode preference to localStorage
   useEffect(() => {
@@ -94,6 +100,35 @@ const BookClub = () => {
   useEffect(() => {
     loadData();
   }, [loadData]);
+
+  // Pull-to-refresh handlers
+  const handleTouchStart = useCallback((e) => {
+    if (containerRef.current?.scrollTop === 0) {
+      touchStartY.current = e.touches[0].clientY;
+    }
+  }, []);
+
+  const handleTouchMove = useCallback((e) => {
+    if (touchStartY.current === 0 || isRefreshing) return;
+
+    const currentY = e.touches[0].clientY;
+    const diff = currentY - touchStartY.current;
+
+    if (diff > 0 && containerRef.current?.scrollTop === 0) {
+      e.preventDefault();
+      setPullDistance(Math.min(diff * 0.5, 100));
+    }
+  }, [isRefreshing]);
+
+  const handleTouchEnd = useCallback(async () => {
+    if (pullDistance > 60) {
+      setIsRefreshing(true);
+      await loadData();
+      setIsRefreshing(false);
+    }
+    setPullDistance(0);
+    touchStartY.current = 0;
+  }, [pullDistance, loadData]);
 
   // Helper to save current state
   const saveCurrentState = useCallback((overrides = {}) => {
@@ -288,7 +323,29 @@ const BookClub = () => {
   };
 
   return (
-    <div className={`book-club ${isDarkMode ? 'dark' : 'light'}`}>
+    <div
+      className={`book-club ${isDarkMode ? 'dark' : 'light'}`}
+      ref={containerRef}
+      onTouchStart={handleTouchStart}
+      onTouchMove={handleTouchMove}
+      onTouchEnd={handleTouchEnd}
+    >
+      {/* Pull-to-refresh indicator */}
+      <div
+        className="pull-indicator"
+        style={{
+          height: pullDistance > 60 || isRefreshing ? pullDistance : 0,
+          opacity: pullDistance > 60 || isRefreshing ? 1 : 0
+        }}
+      >
+        <span className={`pull-spinner ${isRefreshing ? 'spinning' : ''}`}>
+          🔄
+        </span>
+        <span className="pull-text">
+          {isRefreshing ? 'Refreshing...' : 'Release to refresh'}
+        </span>
+      </div>
+
       <header className="header">
         <div className="logo">
           <span className="logo-icon">🐇</span>
