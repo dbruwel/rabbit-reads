@@ -465,7 +465,7 @@ const BookClub = () => {
                               <span className="book-author">by {nomination.author}</span>
                             </div>
                             <div className="nomination-actions">
-                              <span className="nominator">— {nomination.member}</span>
+                              <span className="nominator">{nomination.member}</span>
                               <button
                                 className="remove-btn"
                                 onClick={() => handleRemoveNomination(nomination.id)}
