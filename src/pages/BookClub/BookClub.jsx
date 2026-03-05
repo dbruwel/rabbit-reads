@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import './BookClub.css';
 
 // ===========================================
@@ -33,11 +33,7 @@ const BookClub = () => {
     return saved !== null ? JSON.parse(saved) : false;
   });
 
-  // Pull-to-refresh state
-  const [pullDistance, setPullDistance] = useState(0);
-  const [isRefreshing, setIsRefreshing] = useState(false);
-  const touchStartY = useRef(0);
-  const containerRef = useRef(null);
+
 
   // Save dark mode preference to localStorage
   useEffect(() => {
@@ -101,34 +97,7 @@ const BookClub = () => {
     loadData();
   }, [loadData]);
 
-  // Pull-to-refresh handlers
-  const handleTouchStart = useCallback((e) => {
-    if (containerRef.current?.scrollTop === 0) {
-      touchStartY.current = e.touches[0].clientY;
-    }
-  }, []);
 
-  const handleTouchMove = useCallback((e) => {
-    if (touchStartY.current === 0 || isRefreshing) return;
-
-    const currentY = e.touches[0].clientY;
-    const diff = currentY - touchStartY.current;
-
-    if (diff > 0 && containerRef.current?.scrollTop === 0) {
-      e.preventDefault();
-      setPullDistance(Math.min(diff * 0.5, 100));
-    }
-  }, [isRefreshing]);
-
-  const handleTouchEnd = useCallback(async () => {
-    if (pullDistance > 60) {
-      setIsRefreshing(true);
-      await loadData();
-      setIsRefreshing(false);
-    }
-    setPullDistance(0);
-    touchStartY.current = 0;
-  }, [pullDistance, loadData]);
 
   // Helper to save current state
   const saveCurrentState = useCallback((overrides = {}) => {
@@ -160,8 +129,14 @@ const BookClub = () => {
   const membersWhoNominated = nominations.map((n) => n.member);
   const membersWhoCanNominate = MEMBERS.filter((m) => !membersWhoNominated.includes(m));
 
-  // Check who has already voted
-  const membersWhoVoted = votes.map((v) => v.member);
+  // Check who has fully voted (voted for ALL current nominations)
+  const hasVotedForAllBooks = (memberVote) => {
+    if (!memberVote) return false;
+    return nominations.every((nom) => memberVote.scores[nom.id] !== undefined);
+  };
+  const membersWhoVoted = votes
+    .filter((v) => hasVotedForAllBooks(v))
+    .map((v) => v.member);
   const membersWhoCanVote = MEMBERS.filter((m) => !membersWhoVoted.includes(m));
 
   // Handle nomination submission
@@ -193,6 +168,12 @@ const BookClub = () => {
     }
     setIsVotingOpen(true);
     saveCurrentState({ isVotingOpen: true });
+  };
+
+  // Return to nominations phase (to add more nominations)
+  const handleReturnToNominations = () => {
+    setIsVotingOpen(false);
+    saveCurrentState({ isVotingOpen: false });
   };
 
   // Remove a nomination
@@ -235,12 +216,29 @@ const BookClub = () => {
       return;
     }
 
-    const updatedVotes = [...votes, { member: voteForm.member, scores: { ...voteForm.scores } }];
+    // Check if member already has a vote entry (partial vote from before new nominations)
+    const existingVoteIndex = votes.findIndex((v) => v.member === voteForm.member);
+    let updatedVotes;
+    if (existingVoteIndex >= 0) {
+      // Merge new scores with existing scores
+      updatedVotes = votes.map((v, i) => {
+        if (i === existingVoteIndex) {
+          return { ...v, scores: { ...v.scores, ...voteForm.scores } };
+        }
+        return v;
+      });
+    } else {
+      updatedVotes = [...votes, { member: voteForm.member, scores: { ...voteForm.scores } }];
+    }
     setVotes(updatedVotes);
     setVoteForm({ member: '', scores: {} });
 
-    // Check if all members have voted - if so, determine winner
-    if (updatedVotes.length === MEMBERS.length) {
+    // Check if all members have fully voted - if so, determine winner
+    const allFullyVoted = MEMBERS.every((member) => {
+      const memberVote = updatedVotes.find((v) => v.member === member);
+      return memberVote && nominations.every((nom) => memberVote.scores[nom.id] !== undefined);
+    });
+    if (allFullyVoted) {
       calculateWinner(updatedVotes);
     } else {
       saveCurrentState({ votes: updatedVotes });
@@ -323,29 +321,7 @@ const BookClub = () => {
   };
 
   return (
-    <div
-      className={`book-club ${isDarkMode ? 'dark' : 'light'}`}
-      ref={containerRef}
-      onTouchStart={handleTouchStart}
-      onTouchMove={handleTouchMove}
-      onTouchEnd={handleTouchEnd}
-    >
-      {/* Pull-to-refresh indicator */}
-      <div
-        className="pull-indicator"
-        style={{
-          height: pullDistance > 60 || isRefreshing ? pullDistance : 0,
-          opacity: pullDistance > 60 || isRefreshing ? 1 : 0
-        }}
-      >
-        <span className={`pull-spinner ${isRefreshing ? 'spinning' : ''}`}>
-          🔄
-        </span>
-        <span className="pull-text">
-          {isRefreshing ? 'Refreshing...' : 'Release to refresh'}
-        </span>
-      </div>
-
+    <div className={`book-club ${isDarkMode ? 'dark' : 'light'}`}>
       <header className="header">
         <div className="logo">
           <span className="logo-icon">🐇</span>
@@ -525,7 +501,15 @@ const BookClub = () => {
                           <select
                             id="voter"
                             value={voteForm.member}
-                            onChange={(e) => setVoteForm({ ...voteForm, member: e.target.value })}
+                            onChange={(e) => {
+                              const member = e.target.value;
+                              // Pre-fill with existing votes if member has partial votes
+                              const existingVote = votes.find((v) => v.member === member);
+                              setVoteForm({
+                                member,
+                                scores: existingVote ? { ...existingVote.scores } : {},
+                              });
+                            }}
                           >
                             <option value="">Select your name...</option>
                             {membersWhoCanVote.map((member) => (
@@ -571,6 +555,12 @@ const BookClub = () => {
                         <p className="calculating">Calculating winner...</p>
                       </div>
                     )}
+
+                    <div className="return-nominations-section">
+                      <button onClick={handleReturnToNominations} className="return-nominations-btn">
+                        ← Return to Nominations
+                      </button>
+                    </div>
                   </div>
 
                   {/* Voting Status */}

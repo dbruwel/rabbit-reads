@@ -50,38 +50,6 @@
     -webkit-overflow-scrolling: touch;
 }
 
-/* Pull-to-refresh styles */
-.pull-indicator {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    overflow: hidden;
-    transition: height 0.2s ease-out, opacity 0.2s ease-out;
-    color: var(--text-secondary);
-    font-size: 0.9rem;
-    gap: 4px;
-}
-
-.pull-spinner {
-    font-size: 1.5rem;
-    display: inline-block;
-}
-
-.pull-spinner.spinning {
-    animation: spin 1s linear infinite;
-}
-
-@keyframes spin {
-    from {
-        transform: rotate(0deg);
-    }
-
-    to {
-        transform: rotate(360deg);
-    }
-}
-
 /* Header */
 .header {
     background: var(--bg-secondary);
@@ -384,7 +352,8 @@
     border: 1px solid var(--border);
     background: var(--bg-input);
     color: var(--text-primary);
-    font-size: 0.95rem;
+    font-size: 16px;
+    /* Prevents iOS zoom on focus */
     font-family: 'Georgia', 'Times New Roman', serif;
     transition: border-color 0.2s ease;
     border-radius: 2px;
@@ -477,6 +446,34 @@
     margin-top: 0.5rem !important;
     color: var(--text-muted) !important;
     font-style: normal !important;
+}
+
+.return-nominations-section {
+    margin-top: 1.25rem;
+    padding-top: 1.25rem;
+    border-top: 1px solid var(--border);
+}
+
+.return-nominations-btn {
+    width: 100%;
+    padding: 0.75rem 1.25rem;
+    background: transparent;
+    color: var(--text-secondary);
+    border: 1px solid var(--border);
+    font-size: 0.8rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    font-family: 'Helvetica Neue', Arial, sans-serif;
+    border-radius: 2px;
+}
+
+.return-nominations-btn:hover {
+    background: var(--bg-secondary);
+    color: var(--text-primary);
+    border-color: var(--border-light);
 }
 
 /* Nomination and Vote Items */
