@@ -1,0 +1,1020 @@
+/* =======================================
+   RABBIT READERS - Dark Academia Theme
+   ======================================= */
+
+/* CSS Variables for theming */
+.book-club {
+    --bg-primary: #1c1917;
+    --bg-secondary: #292524;
+    --bg-card: #292524;
+    --bg-input: #1c1917;
+    --text-primary: #e7e5e4;
+    --text-secondary: #a8a29e;
+    --text-muted: #78716c;
+    --accent: #b8a47a;
+    --accent-hover: #d4c49a;
+    --success: #6b8f71;
+    --warning: #c9a227;
+    --border: #44403c;
+    --border-light: #57534e;
+    --shadow: rgba(0, 0, 0, 0.3);
+}
+
+.book-club.light {
+    --bg-primary: #faf8f5;
+    --bg-secondary: #f5f3ef;
+    --bg-card: #ffffff;
+    --bg-input: #ffffff;
+    --text-primary: #1c1917;
+    --text-secondary: #57534e;
+    --text-muted: #78716c;
+    --accent: #8b7355;
+    --accent-hover: #6b5a45;
+    --success: #4a6b4f;
+    --warning: #9a7b1a;
+    --border: #d6d3d1;
+    --border-light: #e7e5e4;
+    --shadow: rgba(0, 0, 0, 0.08);
+}
+
+/* Base styles */
+.book-club {
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    background: var(--bg-primary);
+    color: var(--text-primary);
+    font-family: 'Georgia', 'Times New Roman', serif;
+    transition: background 0.3s ease, color 0.3s ease;
+}
+
+/* Header */
+.header {
+    background: var(--bg-secondary);
+    border-bottom: 1px solid var(--border);
+    padding: 1.25rem 2rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.logo {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.logo-icon {
+    font-size: 1.5rem;
+}
+
+.logo h1 {
+    margin: 0;
+    font-size: 1.5rem;
+    font-weight: 400;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    color: var(--text-primary);
+}
+
+.theme-toggle {
+    background: transparent;
+    border: 1px solid var(--border);
+    color: var(--text-primary);
+    padding: 0.5rem 0.75rem;
+    cursor: pointer;
+    font-size: 1rem;
+    transition: all 0.2s ease;
+    border-radius: 2px;
+}
+
+.theme-toggle:hover {
+    border-color: var(--accent);
+    background: var(--bg-card);
+}
+
+.header-actions {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.refresh-btn {
+    background: transparent;
+    border: 1px solid var(--border);
+    color: var(--text-primary);
+    padding: 0.5rem 0.75rem;
+    cursor: pointer;
+    font-size: 1rem;
+    transition: all 0.2s ease;
+    border-radius: 2px;
+}
+
+.refresh-btn:hover {
+    border-color: var(--accent);
+    background: var(--bg-card);
+}
+
+/* Loading and Error States */
+.loading-state {
+    text-align: center;
+    padding: 3rem;
+    color: var(--text-muted);
+    font-style: italic;
+}
+
+.error-state {
+    text-align: center;
+    padding: 2rem;
+    background: var(--bg-card);
+    border: 1px solid #a54242;
+    border-radius: 2px;
+    margin-bottom: 2rem;
+}
+
+.error-state p {
+    margin: 0 0 1rem 0;
+    color: #a54242;
+}
+
+.retry-btn {
+    padding: 0.5rem 1rem;
+    background: transparent;
+    color: var(--accent);
+    border: 1px solid var(--accent);
+    font-size: 0.8rem;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    font-family: 'Helvetica Neue', Arial, sans-serif;
+    border-radius: 2px;
+}
+
+.retry-btn:hover {
+    background: var(--accent);
+    color: var(--bg-primary);
+}
+
+/* Main Content */
+.main-content {
+    flex: 1;
+    padding: 2rem;
+    max-width: 900px;
+    width: 100%;
+    margin: 0 auto;
+    box-sizing: border-box;
+}
+
+/* Current Book Section */
+.current-book-section {
+    margin-bottom: 2.5rem;
+}
+
+.current-book-card {
+    background: var(--bg-card);
+    border: 1px solid var(--accent);
+    padding: 2rem;
+    text-align: center;
+    border-radius: 2px;
+}
+
+.current-book-label {
+    text-transform: uppercase;
+    font-size: 0.7rem;
+    letter-spacing: 0.15em;
+    color: var(--accent);
+    margin-bottom: 0.75rem;
+    font-family: 'Helvetica Neue', Arial, sans-serif;
+}
+
+.current-book-title {
+    margin: 0 0 0.5rem 0;
+    font-size: 1.75rem;
+    font-weight: 400;
+    font-style: italic;
+    color: var(--text-primary);
+}
+
+.current-book-author {
+    margin: 0 0 0.5rem 0;
+    font-size: 1rem;
+    color: var(--text-secondary);
+}
+
+.current-book-nominator {
+    margin: 0;
+    font-size: 0.85rem;
+    color: var(--text-muted);
+}
+
+.current-book-score {
+    margin: 1rem 0 0 0;
+    font-size: 0.85rem;
+    color: var(--accent);
+    font-family: 'Helvetica Neue', Arial, sans-serif;
+    letter-spacing: 0.05em;
+}
+
+.voting-open-banner {
+    background: var(--bg-card);
+    border: 2px solid var(--warning);
+    padding: 2rem;
+    text-align: center;
+    border-radius: 2px;
+}
+
+.voting-open-banner h2 {
+    margin: 0.5rem 0;
+    font-weight: 400;
+    font-size: 1.25rem;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--warning);
+}
+
+.voting-open-banner p {
+    margin: 0;
+    color: var(--text-secondary);
+    font-size: 0.95rem;
+}
+
+.banner-icon {
+    font-size: 2rem;
+    display: block;
+    margin-bottom: 0.5rem;
+}
+
+.no-book-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    padding: 2rem;
+    text-align: center;
+    border-radius: 2px;
+}
+
+.no-book-card h2 {
+    margin: 0.5rem 0;
+    color: var(--text-secondary);
+    font-weight: 400;
+    font-style: italic;
+}
+
+.no-book-card p {
+    margin: 0;
+    color: var(--text-muted);
+    font-size: 0.9rem;
+}
+
+/* Section Headers */
+.section-header {
+    margin-bottom: 1.5rem;
+    border-bottom: 1px solid var(--border);
+    padding-bottom: 0.75rem;
+}
+
+.section-header h2 {
+    margin: 0 0 0.25rem 0;
+    color: var(--text-primary);
+    font-size: 1.1rem;
+    font-weight: 400;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+}
+
+.section-header p {
+    margin: 0;
+    color: var(--text-muted);
+    font-size: 0.85rem;
+}
+
+/* Content Grid */
+.content-grid {
+    display: grid;
+    gap: 1.5rem;
+}
+
+@media (min-width: 768px) {
+    .content-grid {
+        grid-template-columns: 1fr 1fr;
+    }
+}
+
+/* Cards */
+.form-card,
+.status-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    padding: 1.5rem;
+    border-radius: 2px;
+}
+
+.form-card h3,
+.status-card h3 {
+    margin: 0 0 1.25rem 0;
+    color: var(--text-primary);
+    font-size: 0.9rem;
+    font-weight: 400;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    padding-bottom: 0.75rem;
+    border-bottom: 1px solid var(--border);
+}
+
+/* Forms */
+.nomination-form,
+.vote-form {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.form-group {
+    display: flex;
+    flex-direction: column;
+    gap: 0.4rem;
+}
+
+.form-group label {
+    font-size: 0.75rem;
+    font-weight: 400;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--text-muted);
+    font-family: 'Helvetica Neue', Arial, sans-serif;
+}
+
+.form-group input,
+.form-group select {
+    padding: 0.65rem 0.85rem;
+    border: 1px solid var(--border);
+    background: var(--bg-input);
+    color: var(--text-primary);
+    font-size: 0.95rem;
+    font-family: 'Georgia', 'Times New Roman', serif;
+    transition: border-color 0.2s ease;
+    border-radius: 2px;
+}
+
+.form-group input::placeholder {
+    color: var(--text-muted);
+}
+
+.form-group input:focus,
+.form-group select:focus {
+    outline: none;
+    border-color: var(--accent);
+}
+
+.submit-btn {
+    padding: 0.75rem 1.25rem;
+    background: transparent;
+    color: var(--accent);
+    border: 1px solid var(--accent);
+    font-size: 0.8rem;
+    font-weight: 400;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    margin-top: 0.5rem;
+    font-family: 'Helvetica Neue', Arial, sans-serif;
+    border-radius: 2px;
+}
+
+.submit-btn:hover {
+    background: var(--accent);
+    color: var(--bg-primary);
+}
+
+.all-nominated {
+    text-align: center;
+    padding: 1.25rem;
+    border: 1px dashed var(--border);
+    border-radius: 2px;
+}
+
+.all-nominated p {
+    color: var(--success);
+    margin: 0 0 1rem 0;
+    font-style: italic;
+}
+
+.start-voting-section {
+    margin-top: 1.25rem;
+    padding-top: 1.25rem;
+    border-top: 1px solid var(--border);
+}
+
+.start-voting-btn {
+    width: 100%;
+    padding: 0.75rem 1.25rem;
+    background: var(--warning);
+    color: var(--bg-primary);
+    border: none;
+    font-size: 0.8rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    font-family: 'Helvetica Neue', Arial, sans-serif;
+    border-radius: 2px;
+}
+
+.start-voting-btn:hover {
+    background: var(--accent-hover);
+}
+
+.all-voted {
+    text-align: center;
+    padding: 1.25rem;
+    border: 1px dashed var(--success);
+    border-radius: 2px;
+}
+
+.all-voted p {
+    margin: 0;
+    color: var(--success);
+    font-style: italic;
+}
+
+.calculating {
+    margin-top: 0.5rem !important;
+    color: var(--text-muted) !important;
+    font-style: normal !important;
+}
+
+/* Nomination and Vote Items */
+.nominations-list,
+.votes-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.nomination-item,
+.vote-status-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    padding: 0.85rem;
+    background: var(--bg-primary);
+    border: 1px solid var(--border);
+    border-left: 3px solid var(--border);
+    transition: all 0.2s ease;
+    border-radius: 2px;
+}
+
+.nomination-item.complete,
+.vote-status-item.complete {
+    border-left-color: var(--success);
+}
+
+.member-name {
+    font-weight: 400;
+    color: var(--text-primary);
+}
+
+.nomination-info {
+    text-align: right;
+}
+
+.book-title {
+    display: block;
+    color: var(--text-primary);
+    font-style: italic;
+}
+
+.book-author {
+    display: block;
+    color: var(--text-muted);
+    font-size: 0.85rem;
+}
+
+.nomination-actions,
+.vote-actions {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.nominator {
+    color: var(--accent);
+    font-size: 0.85rem;
+}
+
+.pending {
+    color: var(--warning);
+    font-style: italic;
+    font-size: 0.85rem;
+}
+
+.voted {
+    color: var(--success);
+    font-size: 0.85rem;
+}
+
+.remove-btn {
+    background: transparent;
+    border: none;
+    color: var(--text-muted);
+    font-size: 0.9rem;
+    cursor: pointer;
+    padding: 0.2rem 0.4rem;
+    transition: all 0.2s ease;
+    line-height: 1;
+    border-radius: 2px;
+}
+
+.remove-btn:hover {
+    background: #a54242;
+    color: var(--text-primary);
+}
+
+.no-nominations {
+    color: var(--text-muted);
+    text-align: center;
+    padding: 1rem;
+    font-style: italic;
+}
+
+/* Scoring System */
+.scoring-section {
+    margin-top: 0.5rem;
+}
+
+.scoring-section>label {
+    display: block;
+    font-size: 0.75rem;
+    font-weight: 400;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--text-muted);
+    font-family: 'Helvetica Neue', Arial, sans-serif;
+    margin-bottom: 0.75rem;
+}
+
+.score-options {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.score-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.85rem;
+    background: var(--bg-primary);
+    border: 1px solid var(--border);
+    gap: 1rem;
+    border-radius: 2px;
+}
+
+.score-book-info {
+    flex: 1;
+}
+
+.score-title {
+    display: block;
+    color: var(--text-primary);
+    font-style: italic;
+}
+
+.score-author {
+    display: block;
+    color: var(--text-muted);
+    font-size: 0.85rem;
+}
+
+.score-input-wrapper {
+    flex-shrink: 0;
+}
+
+.score-input {
+    width: 60px;
+    padding: 0.5rem 0.5rem;
+    border: 1px solid var(--border);
+    background: var(--bg-input);
+    color: var(--text-primary);
+    font-size: 1rem;
+    text-align: center;
+    font-family: 'Georgia', 'Times New Roman', serif;
+    transition: border-color 0.2s ease;
+    border-radius: 2px;
+}
+
+.score-input:focus {
+    outline: none;
+    border-color: var(--accent);
+}
+
+.score-input::placeholder {
+    font-size: 0.75rem;
+    color: var(--text-muted);
+}
+
+/* History Section */
+.history-section {
+    margin-top: 2.5rem;
+    padding-top: 2rem;
+    border-top: 1px solid var(--border);
+}
+
+.history-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+}
+
+.history-item {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    padding: 1rem 1.25rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 1rem;
+    border-radius: 2px;
+}
+
+.history-book-info {
+    display: flex;
+    flex-direction: column;
+    gap: 0.15rem;
+}
+
+.history-title {
+    font-size: 1rem;
+    color: var(--text-primary);
+    font-style: italic;
+}
+
+.history-author {
+    color: var(--text-muted);
+    font-size: 0.85rem;
+}
+
+.history-meta {
+    display: flex;
+    align-items: center;
+    gap: 1.25rem;
+    flex-wrap: wrap;
+}
+
+.history-score {
+    background: var(--accent);
+    color: var(--bg-primary);
+    padding: 0.25rem 0.6rem;
+    font-size: 0.75rem;
+    font-family: 'Helvetica Neue', Arial, sans-serif;
+    letter-spacing: 0.03em;
+    border-radius: 2px;
+}
+
+.history-date {
+    color: var(--text-muted);
+    font-size: 0.8rem;
+    font-family: 'Helvetica Neue', Arial, sans-serif;
+}
+
+.history-nominator {
+    color: var(--text-secondary);
+    font-size: 0.8rem;
+    font-style: italic;
+}
+
+@media (max-width: 600px) {
+    .history-item {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+
+    .history-meta {
+        width: 100%;
+        justify-content: flex-start;
+    }
+}
+
+/* Rules Section */
+.rules-section {
+    margin-top: 2.5rem;
+    padding-top: 2rem;
+    border-top: 1px solid var(--border);
+}
+
+.rules-content {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    padding: 1.5rem 2rem;
+    border-radius: 2px;
+}
+
+.rules-content p {
+    margin: 0;
+    line-height: 1.8;
+    color: var(--text-secondary);
+    font-size: 0.95rem;
+}
+
+.rules-content em {
+    font-style: italic;
+    color: var(--text-primary);
+}
+
+.rules-content strong {
+    font-weight: 600;
+    color: var(--accent);
+}
+
+/* Footer */
+.footer {
+    background: var(--bg-secondary);
+    border-top: 1px solid var(--border);
+    color: var(--text-muted);
+    text-align: center;
+    padding: 1rem;
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    font-family: 'Helvetica Neue', Arial, sans-serif;
+}
+
+.footer p {
+    margin: 0;
+}
+
+/* Animation */
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+    }
+
+    to {
+        opacity: 1;
+    }
+}
+
+.phase-section {
+    animation: fadeIn 0.3s ease;
+}
+
+/* Legacy classes - keeping for compatibility */
+.phase-header {
+    text-align: center;
+    margin-bottom: 2rem;
+}
+
+.phase-header h2 {
+    margin: 0 0 0.5rem 0;
+    color: var(--text-primary);
+    font-size: 1.5rem;
+    font-weight: 400;
+}
+
+.phase-header p {
+    margin: 0;
+    color: var(--text-muted);
+}
+
+.member-status-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.member-status {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    padding: 0.85rem;
+    background: var(--bg-primary);
+    border: 1px solid var(--border);
+    border-left: 3px solid var(--border);
+    transition: all 0.2s ease;
+    border-radius: 2px;
+}
+
+.member-status.complete {
+    border-left-color: var(--success);
+}
+
+.progress-info {
+    margin-top: 1rem;
+    text-align: center;
+    color: var(--text-muted);
+    font-size: 0.85rem;
+    padding-top: 1rem;
+    border-top: 1px solid var(--border);
+}
+
+.ready-to-vote {
+    margin-top: 1rem;
+    text-align: center;
+    color: var(--warning);
+    padding-top: 1rem;
+    border-top: 1px solid var(--border);
+}
+
+.vote-options {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.vote-option {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.75rem;
+    padding: 0.85rem;
+    background: var(--bg-primary);
+    border: 1px solid var(--border);
+    cursor: pointer;
+    transition: all 0.2s ease;
+    border-radius: 2px;
+}
+
+.vote-option:hover {
+    border-color: var(--accent);
+}
+
+.vote-option.selected {
+    border-color: var(--accent);
+    background: var(--bg-secondary);
+}
+
+.vote-option input[type='radio'] {
+    margin-top: 0.25rem;
+    accent-color: var(--accent);
+}
+
+.vote-option-content {
+    display: flex;
+    flex-direction: column;
+}
+
+.vote-title {
+    color: var(--text-primary);
+    font-style: italic;
+}
+
+.vote-author {
+    color: var(--text-muted);
+    font-size: 0.85rem;
+}
+
+.vote-nominator {
+    color: var(--accent);
+    font-size: 0.8rem;
+    margin-top: 0.25rem;
+}
+
+/* Winner Section */
+.winner-section {
+    text-align: center;
+}
+
+.winner-card {
+    background: var(--bg-card);
+    border: 2px solid var(--accent);
+    padding: 2rem;
+    margin-bottom: 2rem;
+    border-radius: 2px;
+}
+
+.winner-badge {
+    font-size: 3rem;
+    margin-bottom: 1rem;
+}
+
+.winner-title {
+    margin: 0 0 0.5rem 0;
+    font-size: 1.5rem;
+    font-weight: 400;
+    font-style: italic;
+    color: var(--text-primary);
+}
+
+.winner-author {
+    margin: 0 0 0.5rem 0;
+    font-size: 1rem;
+    color: var(--text-muted);
+}
+
+.winner-nominator {
+    margin: 0 0 1rem 0;
+    color: var(--accent);
+    font-size: 0.9rem;
+}
+
+.winner-votes {
+    margin: 0;
+    background: var(--success);
+    color: white;
+    display: inline-block;
+    padding: 0.4rem 0.8rem;
+    font-size: 0.8rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    font-family: 'Helvetica Neue', Arial, sans-serif;
+    border-radius: 2px;
+}
+
+.all-nominations {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    padding: 1.5rem;
+    margin-bottom: 2rem;
+    text-align: left;
+    border-radius: 2px;
+}
+
+.all-nominations h3 {
+    margin: 0 0 1rem 0;
+    color: var(--text-primary);
+    font-weight: 400;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    font-size: 0.9rem;
+}
+
+.final-results {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.result-item {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    padding: 0.75rem;
+    background: var(--bg-primary);
+    border: 1px solid var(--border);
+    border-radius: 2px;
+}
+
+.result-item.winner {
+    border-color: var(--success);
+    border-left: 3px solid var(--success);
+}
+
+.result-rank {
+    font-weight: 400;
+    color: var(--accent);
+    min-width: 30px;
+    font-family: 'Helvetica Neue', Arial, sans-serif;
+}
+
+.result-info {
+    flex: 1;
+}
+
+.result-title {
+    display: block;
+    color: var(--text-primary);
+    font-style: italic;
+}
+
+.result-author {
+    display: block;
+    color: var(--text-muted);
+    font-size: 0.85rem;
+}
+
+.result-votes {
+    color: var(--success);
+    font-size: 0.8rem;
+    font-family: 'Helvetica Neue', Arial, sans-serif;
+}
+
+.new-cycle-btn {
+    padding: 0.75rem 1.5rem;
+    background: transparent;
+    color: var(--accent);
+    border: 1px solid var(--accent);
+    font-size: 0.8rem;
+    font-weight: 400;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    font-family: 'Helvetica Neue', Arial, sans-serif;
+    border-radius: 2px;
+}
+
+.new-cycle-btn:hover {
+    background: var(--accent);
+    color: var(--bg-primary);
+}
+
+.all-done-message {
+    color: var(--success);
+    text-align: center;
+    padding: 1.5rem;
+    border: 1px dashed var(--success);
+    font-style: italic;
+    border-radius: 2px;
+}
