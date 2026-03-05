@@ -39,9 +39,23 @@ const BookClub = () => {
     return saved !== null ? JSON.parse(saved) : false;
   });
 
-  const handlePasswordSubmit = (e) => {
+  // SHA-256 hash of the password (pre-computed)
+  // To generate a new hash, run in browser console:
+  // crypto.subtle.digest('SHA-256', new TextEncoder().encode('yourpassword')).then(h => console.log(Array.from(new Uint8Array(h)).map(b => b.toString(16).padStart(2, '0')).join('')))
+  const PASSWORD_HASH = 'da79aba81047c9527ac6df63a89aa9d709d93ecefe853598e3b127718e4a83d0';
+
+  const hashPassword = async (password) => {
+    const encoder = new TextEncoder();
+    const data = encoder.encode(password);
+    const hashBuffer = await crypto.subtle.digest('SHA-256', data);
+    const hashArray = Array.from(new Uint8Array(hashBuffer));
+    return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+  };
+
+  const handlePasswordSubmit = async (e) => {
     e.preventDefault();
-    if (passwordInput === 'carrots314') {
+    const inputHash = await hashPassword(passwordInput);
+    if (inputHash === PASSWORD_HASH) {
       localStorage.setItem('rabbitReadersAuth', 'true');
       setIsAuthenticated(true);
       setPasswordError(false);
