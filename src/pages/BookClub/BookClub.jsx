@@ -21,6 +21,12 @@ const INITIAL_DATA = {
 };
 
 const BookClub = () => {
+  const [isAuthenticated, setIsAuthenticated] = useState(() => {
+    return localStorage.getItem('rabbitReadersAuth') === 'true';
+  });
+  const [passwordInput, setPasswordInput] = useState('');
+  const [passwordError, setPasswordError] = useState(false);
+
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
   const [isVotingOpen, setIsVotingOpen] = useState(false);
@@ -32,6 +38,17 @@ const BookClub = () => {
     const saved = localStorage.getItem('rabbitReadersDarkMode');
     return saved !== null ? JSON.parse(saved) : false;
   });
+
+  const handlePasswordSubmit = (e) => {
+    e.preventDefault();
+    if (passwordInput === 'password') {
+      localStorage.setItem('rabbitReadersAuth', 'true');
+      setIsAuthenticated(true);
+      setPasswordError(false);
+    } else {
+      setPasswordError(true);
+    }
+  };
 
 
 
@@ -319,6 +336,33 @@ const BookClub = () => {
       history: newHistory,
     });
   };
+
+  // Password gate screen
+  if (!isAuthenticated) {
+    return (
+      <div className={`book-club ${isDarkMode ? 'dark' : 'light'}`}>
+        <div className="password-gate">
+          <div className="password-card">
+            <span className="password-icon">🐇</span>
+            <h1>Rabbit Readers</h1>
+            <p>Enter the password to continue</p>
+            <form onSubmit={handlePasswordSubmit}>
+              <input
+                type="password"
+                value={passwordInput}
+                onChange={(e) => setPasswordInput(e.target.value)}
+                placeholder="Password"
+                className={passwordError ? 'error' : ''}
+                autoFocus
+              />
+              {passwordError && <span className="password-error">Incorrect password</span>}
+              <button type="submit">Enter</button>
+            </form>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className={`book-club ${isDarkMode ? 'dark' : 'light'}`}>
