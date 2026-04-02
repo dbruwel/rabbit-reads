@@ -9,7 +9,7 @@ const API_KEY = '$2a$10$.C0VMtbgczOBf1t/Kbn8WeWJ3G6dp46XxqVVitI42AaTVkwN3iM1q';
 const API_URL = `https://api.jsonbin.io/v3/b/${BIN_ID}`;
 
 // Fixed members
-const MEMBERS = ['Angela', 'Ashton', 'Daniel', 'Gen', 'Jackson', 'Katie', 'Mani', 'Max', 'Wayne'];
+const MEMBERS = ['Angela', 'Ashton', 'Daniel', 'Gen', 'Jackson', 'Katie', 'Mani', 'Max', 'Sean', 'Wayne'];
 
 // Initial empty state for the data store
 const INITIAL_DATA = {
