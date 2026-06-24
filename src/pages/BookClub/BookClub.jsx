@@ -9,7 +9,7 @@ const API_KEY = '$2a$10$.C0VMtbgczOBf1t/Kbn8WeWJ3G6dp46XxqVVitI42AaTVkwN3iM1q';
 const API_URL = `https://api.jsonbin.io/v3/b/${BIN_ID}`;
 
 // Fixed members
-const MEMBERS = ['Angela', 'Ashton', 'Daniel', 'Jackson', 'Katie', 'Mani', 'Max', 'Richard', 'Sean', 'Ursula', 'Wayne'];
+const MEMBERS = ['Angela', 'Ashton', 'Daniel', 'Jackson', 'Katie', 'Mani', 'Richard', 'Sean', 'Ursula', 'Wayne'];
 
 // Initial empty state for the data store
 const INITIAL_DATA = {
@@ -18,9 +18,10 @@ const INITIAL_DATA = {
   votes: [],
   currentBook: null,
   history: [],
+  // legacy fields optOutMembers / excludedFromVoting removed; derive from nominations/votes
 };
 
-const BookClub = () => {
+function BookClub() {
   const [isAuthenticated, setIsAuthenticated] = useState(() => {
     return localStorage.getItem('rabbitReadersAuth') === 'true';
   });
@@ -31,9 +32,11 @@ const BookClub = () => {
   const [error, setError] = useState(null);
   const [isVotingOpen, setIsVotingOpen] = useState(false);
   const [nominations, setNominations] = useState([]); // { id, member, title, author }
-  const [votes, setVotes] = useState([]); // { member, scores: { nominationId: score } }
+  const [votes, setVotes] = useState([]); // { member, scores: { nominationId: score }, optedOut }
   const [currentBook, setCurrentBook] = useState(null); // The winner / current read
   const [history, setHistory] = useState([]); // { title, author, member, averageScore, completedDate }
+  // Note: opt-out state is derived from `nominations` (null title/author)
+  // and `votes` (optedOut flag) instead of separate arrays.
   const [isDarkMode, setIsDarkMode] = useState(() => {
     const saved = localStorage.getItem('rabbitReadersDarkMode');
     return saved !== null ? JSON.parse(saved) : false;
@@ -115,6 +118,8 @@ const BookClub = () => {
       setVotes(data.votes ?? []);
       setCurrentBook(data.currentBook ?? null);
       setHistory(data.history ?? []);
+      // legacy bins may have optOutMembers/excludedFromVoting but we derive
+      // opt-out state from `nominations` and `votes` instead
     } catch (err) {
       console.error('Failed to load data:', err);
       setError('Failed to load data. Please check the API configuration.');
@@ -143,6 +148,47 @@ const BookClub = () => {
     saveData(data);
   }, [isVotingOpen, nominations, votes, currentBook, history, saveData]);
 
+  // Pull latest data from server, apply update, and push back (prevents stale data)
+  const pullUpdatePush = useCallback(async (updateFn) => {
+    try {
+      // Pull latest data
+      const response = await fetch(`${API_URL}/latest`, {
+        headers: {
+          'X-Master-Key': API_KEY,
+        },
+      });
+      if (!response.ok) throw new Error('Failed to fetch latest data');
+      const json = await response.json();
+      const latestData = json.record;
+
+      // Apply update to latest data
+      const updatedData = updateFn(latestData);
+
+      // Push updated data
+      await fetch(API_URL, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-Master-Key': API_KEY,
+        },
+        body: JSON.stringify(updatedData),
+      });
+
+      // Update local state to match what was pushed
+      setIsVotingOpen(updatedData.isVotingOpen ?? false);
+      setNominations(updatedData.nominations ?? []);
+      setVotes(updatedData.votes ?? []);
+      setCurrentBook(updatedData.currentBook ?? null);
+      setHistory(updatedData.history ?? []);
+
+      return updatedData;
+    } catch (err) {
+      console.error('Pull-update-push failed:', err);
+      setError('Failed to save data. Please try again.');
+      throw err;
+    }
+  }, []);
+
   // Form state for nomination
   const [nominationForm, setNominationForm] = useState({
     member: '',
@@ -158,20 +204,49 @@ const BookClub = () => {
 
   // Check who has already nominated
   const membersWhoNominated = nominations.map((n) => n.member);
-  const membersWhoCanNominate = MEMBERS.filter((m) => !membersWhoNominated.includes(m));
+  const isMemberOptedOutNom = (member) =>
+    nominations.some((n) => n.member === member && n.title === null && n.author === null);
+  const membersWhoCanNominate = MEMBERS.filter(
+    (m) => !membersWhoNominated.includes(m) && !isMemberOptedOutNom(m)
+  );
+
+  const activeNominations = nominations.filter((n) => n.title !== null);
 
   // Check who has fully voted (voted for ALL current nominations)
   const hasVotedForAllBooks = (memberVote) => {
     if (!memberVote) return false;
-    return nominations.every((nom) => memberVote.scores[nom.id] !== undefined);
+    // If the member explicitly opted out of voting, treat as 'complete'
+    if (memberVote.optedOut) return true;
+    const scores = memberVote.scores || {};
+    return activeNominations.every((nom) => scores[nom.id] !== undefined);
   };
   const membersWhoVoted = votes
     .filter((v) => hasVotedForAllBooks(v))
     .map((v) => v.member);
-  const membersWhoCanVote = MEMBERS.filter((m) => !membersWhoVoted.includes(m));
+  const isMemberExcludedFromVoting = (member) => votes.some((v) => v.member === member && v.optedOut);
+  const membersWhoCanVote = MEMBERS.filter(
+    (m) => !membersWhoVoted.includes(m) && !isMemberExcludedFromVoting(m)
+  );
+
+  useEffect(() => {
+    if (!isVotingOpen || activeNominations.length === 0) return;
+
+    const votingMembers = MEMBERS.filter(
+      (member) => !votes.some((v) => v.member === member && v.optedOut)
+    );
+
+    const allFullyVoted = votingMembers.every((member) => {
+      const memberVote = votes.find((v) => v.member === member);
+      return memberVote && activeNominations.every((nom) => memberVote.scores?.[nom.id] !== undefined);
+    });
+
+    if (allFullyVoted) {
+      calculateWinner(votes, nominations);
+    }
+  }, [votes, nominations, isVotingOpen, activeNominations, calculateWinner]);
 
   // Handle nomination submission
-  const handleNominate = (e) => {
+  const handleNominate = async (e) => {
     e.preventDefault();
     if (!nominationForm.member || !nominationForm.title || !nominationForm.author) {
       alert('Please fill in all fields');
@@ -185,10 +260,15 @@ const BookClub = () => {
       author: nominationForm.author,
     };
 
-    const newNominations = [...nominations, newNomination];
-    setNominations(newNominations);
-    setNominationForm({ member: '', title: '', author: '' });
-    saveCurrentState({ nominations: newNominations });
+    try {
+      await pullUpdatePush((latestData) => ({
+        ...latestData,
+        nominations: [...(latestData.nominations ?? []), newNomination],
+      }));
+      setNominationForm({ member: '', title: '', author: '' });
+    } catch (err) {
+      console.error('Failed to submit nomination:', err);
+    }
   };
 
   // Start voting (can happen anytime there's at least one nomination)
@@ -207,18 +287,87 @@ const BookClub = () => {
     saveCurrentState({ isVotingOpen: false });
   };
 
-  // Remove a nomination
-  const handleRemoveNomination = (nominationId) => {
-    const newNominations = nominations.filter((n) => n.id !== nominationId);
-    setNominations(newNominations);
-    saveCurrentState({ nominations: newNominations });
+  // Remove a nomination (uses pull-update-push to avoid stale writes)
+  const handleRemoveNomination = async (nominationId) => {
+    try {
+      await pullUpdatePush((latestData) => ({
+        ...latestData,
+        nominations: (latestData.nominations || []).filter((n) => n.id !== nominationId),
+      }));
+    } catch (err) {
+      console.error('Failed to remove nomination:', err);
+    }
   };
 
-  // Remove a vote
-  const handleRemoveVote = (memberName) => {
-    const newVotes = votes.filter((v) => v.member !== memberName);
-    setVotes(newVotes);
-    saveCurrentState({ votes: newVotes });
+  // Remove a vote (use pull-update-push to avoid stale writes)
+  const handleRemoveVote = async (memberName) => {
+    try {
+      await pullUpdatePush((latestData) => ({
+        ...latestData,
+        votes: (latestData.votes || []).filter((v) => v.member !== memberName),
+      }));
+    } catch (err) {
+      console.error('Failed to remove vote:', err);
+    }
+  };
+
+  // Toggle opt-out from nominations
+  // Toggle opt-out from nominations. When opting out we add a "null" nomination
+  // (title/author === null) so the member is recorded as opting out. Uses pull-update-push.
+  const handleToggleOptOut = async (memberName) => {
+    try {
+      await pullUpdatePush((latestData) => {
+        const latestNominations = latestData.nominations || [];
+        let newNominations = [...latestNominations];
+        const hasNullNom = newNominations.some((n) => n.member === memberName && n.title === null && n.author === null);
+        if (hasNullNom) {
+          // remove the null nomination (opt-in)
+          newNominations = newNominations.filter((n) => !(n.member === memberName && n.title === null && n.author === null));
+        } else {
+          // add a null nomination to record opt-out
+          newNominations.push({ id: Date.now(), member: memberName, title: null, author: null });
+        }
+
+        return {
+          ...latestData,
+          nominations: newNominations,
+        };
+      });
+      // clear the nomination form selection
+      setNominationForm({ member: '', title: '', author: '' });
+    } catch (err) {
+      console.error('Failed to toggle opt-out:', err);
+    }
+  };
+
+  // Toggle exclusion from voting
+  // Toggle exclusion from voting. Uses pull-update-push so changes are applied
+  // against the latest data. When excluding, we mark the votes entry as optedOut.
+  const handleToggleExcludeFromVoting = async (memberName) => {
+    try {
+      await pullUpdatePush((latestData) => {
+        const latestVotes = latestData.votes || [];
+        let newVotes = [...latestVotes];
+        const existingOpted = newVotes.find((v) => v.member === memberName && v.optedOut);
+        if (existingOpted) {
+          // remove optedOut marker (include in voting)
+          newVotes = newVotes.filter((v) => !(v.member === memberName && v.optedOut));
+        } else {
+          // remove any previous vote and add optedOut marker
+          newVotes = newVotes.filter((v) => v.member !== memberName);
+          newVotes.push({ member: memberName, optedOut: true });
+        }
+
+        return {
+          ...latestData,
+          votes: newVotes,
+        };
+      });
+      // clear the vote form selection
+      setVoteForm({ member: '', scores: {} });
+    } catch (err) {
+      console.error('Failed to toggle voting exclusion:', err);
+    }
   };
 
   // Handle score change for a book
@@ -233,76 +382,107 @@ const BookClub = () => {
   };
 
   // Handle vote submission
-  const handleVote = (e) => {
+  const handleVote = async (e) => {
     e.preventDefault();
     if (!voteForm.member) {
       alert('Please select who you are');
       return;
     }
 
-    // Check all books have been scored
-    const allScored = nominations.every((nom) => voteForm.scores[nom.id] !== undefined);
+    // Check all non-opt-out nominations have been scored
+    const activeNominations = nominations.filter((n) => n.title !== null);
+    const allScored = activeNominations.every((nom) => voteForm.scores[nom.id] !== undefined);
     if (!allScored) {
       alert('Please score all books before submitting');
       return;
     }
 
-    // Check if member already has a vote entry (partial vote from before new nominations)
-    const existingVoteIndex = votes.findIndex((v) => v.member === voteForm.member);
-    let updatedVotes;
-    if (existingVoteIndex >= 0) {
-      // Merge new scores with existing scores
-      updatedVotes = votes.map((v, i) => {
-        if (i === existingVoteIndex) {
-          return { ...v, scores: { ...v.scores, ...voteForm.scores } };
-        }
-        return v;
-      });
-    } else {
-      updatedVotes = [...votes, { member: voteForm.member, scores: { ...voteForm.scores } }];
-    }
-    setVotes(updatedVotes);
-    setVoteForm({ member: '', scores: {} });
+    try {
+      const updatedData = await pullUpdatePush((latestData) => {
+        const currentNominations = latestData.nominations ?? [];
+        const currentVotes = latestData.votes ?? [];
 
-    // Check if all members have fully voted - if so, determine winner
-    const allFullyVoted = MEMBERS.every((member) => {
-      const memberVote = updatedVotes.find((v) => v.member === member);
-      return memberVote && nominations.every((nom) => memberVote.scores[nom.id] !== undefined);
-    });
-    if (allFullyVoted) {
-      calculateWinner(updatedVotes);
-    } else {
-      saveCurrentState({ votes: updatedVotes });
-    }
-  };
+        // Check if member already has a vote entry (partial vote from before new nominations)
+        const existingVoteIndex = currentVotes.findIndex((v) => v.member === voteForm.member);
+        let updatedVotes;
+        if (existingVoteIndex >= 0) {
+          // Merge new scores with existing scores
+          updatedVotes = currentVotes.map((v, i) => {
+            if (i === existingVoteIndex) {
+              return { ...v, scores: { ...v.scores, ...voteForm.scores } };
+            }
+            return v;
+          });
+        } else {
+          updatedVotes = [...currentVotes, { member: voteForm.member, scores: { ...voteForm.scores } }];
+        }
+
+        return {
+          ...latestData,
+          votes: updatedVotes,
+        };
+      });
+
+      setVoteForm({ member: '', scores: {} });
+
+      // Check if all members (except excluded) have fully voted - if so, determine winner
+      const votingMembers = MEMBERS.filter((m) => !((updatedData.votes || []).some((v) => v.member === m && v.optedOut)));
+      const allFullyVoted = votingMembers.every((member) => {
+        const memberVote = updatedData.votes.find((v) => v.member === member);
+        return memberVote && updatedData.nominations.filter((n) => n.title !== null).every((nom) => memberVote.scores[nom.id] !== undefined);
+      });
+
+      if (allFullyVoted) {
+        calculateWinner(updatedData.votes, updatedData.nominations);
+      }
+    } catch (err) {
+      console.error('Failed to submit vote:', err);
+    };
+  }
 
   // Calculate winner based on total scores
-  const calculateWinner = (allVotes) => {
-    const totalScores = {};
-
-    // Sum up all scores for each nomination
-    nominations.forEach((nom) => {
-      totalScores[nom.id] = 0;
+  function calculateWinner(allVotes, allNominations) {
+    // Compute per-nomination sum and count from voters who actually voted (exclude opted-out)
+    const sums = {};
+    const counts = {};
+    allNominations.forEach((nom) => {
+      sums[nom.id] = 0;
+      counts[nom.id] = 0;
     });
 
     allVotes.forEach((vote) => {
-      Object.entries(vote.scores).forEach(([nominationId, score]) => {
-        totalScores[nominationId] = (totalScores[nominationId] || 0) + score;
+      if (vote.optedOut) return; // skip opted-out voters
+      const scores = vote.scores || {};
+      Object.entries(scores).forEach(([nominationId, score]) => {
+        const id = Number(nominationId);
+        if (sums[id] === undefined) {
+          sums[id] = 0;
+          counts[id] = 0;
+        }
+        sums[id] += Number(score) || 0;
+        counts[id] += 1;
       });
     });
 
-    // Find the nomination with the highest total score
-    let maxScore = -1;
+    // Compute averages and pick the nomination with highest average (tie-breaker: highest sum)
+    let bestAvg = -1;
+    let bestSum = -1;
     let winningId = null;
-    Object.entries(totalScores).forEach(([id, score]) => {
-      if (score > maxScore) {
-        maxScore = score;
-        winningId = Number(id);
+    Object.keys(sums).forEach((key) => {
+      const id = Number(key);
+      const cnt = counts[id] || 0;
+      const sum = sums[id] || 0;
+      const avg = cnt > 0 ? sum / cnt : 0;
+      if (avg > bestAvg || (avg === bestAvg && sum > bestSum)) {
+        bestAvg = avg;
+        bestSum = sum;
+        winningId = id;
       }
     });
 
-    const winningNomination = nominations.find((n) => n.id === winningId);
-    const averageScore = (maxScore / MEMBERS.length).toFixed(1);
+    const winningNomination = allNominations.find((n) => n.id === winningId);
+    const averageScore = bestAvg >= 0 ? bestAvg.toFixed(1) : '0.0';
+    const maxScore = bestSum;
     const completedDate = new Date().toLocaleDateString('en-US', {
       year: 'numeric',
       month: 'long',
@@ -349,7 +529,7 @@ const BookClub = () => {
       currentBook: newCurrentBook,
       history: newHistory,
     });
-  };
+  }
 
   // Password gate screen
   if (!isAuthenticated) {
@@ -468,6 +648,19 @@ const BookClub = () => {
                               </option>
                             ))}
                           </select>
+                          <button
+                            type="button"
+                            className={`submit-btn ${isMemberOptedOutNom(nominationForm.member) ? 'opted-out' : ''}`}
+                            onClick={() => {
+                              if (!nominationForm.member) {
+                                alert('Select your name first');
+                                return;
+                              }
+                              handleToggleOptOut(nominationForm.member);
+                            }}
+                          >
+                            {isMemberOptedOutNom(nominationForm.member) ? '✓ Opted Out' : 'Opt out'}
+                          </button>
                         </div>
 
                         <div className="form-group">
@@ -511,8 +704,17 @@ const BookClub = () => {
                         {nominations.map((nomination) => (
                           <div key={nomination.id} className="nomination-item complete">
                             <div className="nomination-info">
-                              <span className="book-title">{nomination.title}</span>
-                              <span className="book-author">by {nomination.author}</span>
+                              {nomination.title === null ? (
+                                <>
+                                  <span className="book-title">Not nominating</span>
+                                  <span className="book-author" />
+                                </>
+                              ) : (
+                                <>
+                                  <span className="book-title">{nomination.title}</span>
+                                  <span className="book-author">by {nomination.author}</span>
+                                </>
+                              )}
                             </div>
                             <div className="nomination-actions">
                               <span className="nominator">{nomination.member}</span>
@@ -531,6 +733,8 @@ const BookClub = () => {
                       <p className="no-nominations">No nominations yet</p>
                     )}
                   </div>
+
+                  {/* Member preferences UI removed (opt-out controls are inline) */}
                 </div>
               </section>
             ) : (
@@ -557,7 +761,7 @@ const BookClub = () => {
                               const existingVote = votes.find((v) => v.member === member);
                               setVoteForm({
                                 member,
-                                scores: existingVote ? { ...existingVote.scores } : {},
+                                scores: existingVote && existingVote.scores ? { ...existingVote.scores } : {},
                               });
                             }}
                           >
@@ -568,12 +772,27 @@ const BookClub = () => {
                               </option>
                             ))}
                           </select>
+                          <button
+                            type="button"
+                            className={`submit-btn ${isMemberExcludedFromVoting(voteForm.member) ? 'opted-out' : ''}`}
+                            onClick={() => {
+                              const member = voteForm.member;
+                              if (!member) {
+                                alert('Select your name first');
+                                return;
+                              }
+                              handleToggleExcludeFromVoting(member);
+                            }}
+                            title="Opt out / include in voting"
+                          >
+                            {isMemberExcludedFromVoting(voteForm.member) ? '✓ Opted Out' : 'Opt out'}
+                          </button>
                         </div>
 
                         <div className="scoring-section">
                           <label>Score each book (0-10):</label>
                           <div className="score-options">
-                            {nominations.map((nom) => (
+                            {nominations.filter((n) => n.title !== null).map((nom) => (
                               <div key={nom.id} className="score-item">
                                 <div className="score-book-info">
                                   <span className="score-title">{nom.title}</span>
@@ -619,12 +838,13 @@ const BookClub = () => {
                     <div className="votes-list">
                       {MEMBERS.map((member) => {
                         const hasVoted = membersWhoVoted.includes(member);
+                        const isExcluded = isMemberExcludedFromVoting(member);
                         return (
-                          <div key={member} className={`vote-status-item ${hasVoted ? 'complete' : ''}`}>
+                          <div key={member} className={`vote-status-item ${hasVoted ? 'complete' : ''} ${isExcluded ? 'excluded' : ''}`}>
                             <span className="member-name">{member}</span>
                             <div className="vote-actions">
-                              <span className={hasVoted ? 'voted' : 'pending'}>
-                                {hasVoted ? '✓ Voted' : 'Waiting...'}
+                              <span className={hasVoted ? 'voted' : isExcluded ? 'excluded-label' : 'pending'}>
+                                {isExcluded ? '⊘ Excluded' : hasVoted ? '✓ Voted' : 'Waiting...'}
                               </span>
                               {hasVoted && (
                                 <button
@@ -704,6 +924,6 @@ const BookClub = () => {
       </footer>
     </div>
   );
-};
+}
 
 export default BookClub;
