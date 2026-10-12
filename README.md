@@ -28,7 +28,7 @@ The password exists for one reason: to stop one particular friend from wandering
 ## Tech
 
 - [React 19](https://react.dev/) + [Vite](https://vite.dev/)
-- [JSONBin.io](https://jsonbin.io/) as the shared data store. Writes go through a fetch-latest, update, then save step so two people saving at the same time don't overwrite each other.
+- [JSONBin.io](https://jsonbin.io/) as the shared data store. Writes go through a fetch-latest, update, then save step. This reduces the chance that two people saving at the same time overwrite each other. To eliminate this, we'd want an atomic action, but the current approach is sutible for the scale of the project.
 - No backend: everything runs in the browser.
 
 The member list, bin ID, API key and password hash are all defined at the top of [src/pages/BookClub/BookClub.jsx](src/pages/BookClub/BookClub.jsx).
