@@ -1,5 +1,7 @@
 # 🐇 Rabbit Readers
 
+> **A note on how this was made**: The web code is almost entirely AI generated. My contribution is limited to the voting mechanism, the read write logic for the JSONbin (to reduce the chances of races), and the structure / concept of the app. 
+
 A small web app for our book club to nominate books, vote on them, and keep track of what we've read.
 
 > **About the name:** "Rabbit Readers" is an inside joke that I think we've all forgotten at this stage.
