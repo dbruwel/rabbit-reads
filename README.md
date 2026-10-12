@@ -19,11 +19,13 @@ Other bits:
 - Pull to refresh
 - Installable as a home screen app on phones (PWA manifest and icons)
 
-## A note on the password
+## A note on the password and API key
 
 The site sits behind a password, and the API key for the data store is in the client code. **None of this is meant as real security.** There's nothing sensitive in here, just book titles and scores.
 
 The password exists for one reason: to stop one particular friend from wandering in and making being a nuisance. It's a "keep out" sign, not a lock. Please don't put anything private in here.
+
+The API key is scoped as an `Access-Key` with read and update access only. I only have one bin attached to the account.
 
 ## Tech
 

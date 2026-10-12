@@ -5,7 +5,7 @@ import './BookClub.css';
 // CONFIGURATION - JSONBin.io backend
 // ===========================================
 const BIN_ID = '69a9071cd0ea881f40f05ffe';
-const API_KEY = '$2a$10$.C0VMtbgczOBf1t/Kbn8WeWJ3G6dp46XxqVVitI42AaTVkwN3iM1q';
+const API_KEY = '$2a$10$LVwkMPQOHnE1Xv.IQSKBaeS4sTndH/mkxwVHeGM5MZ.5XRVvYeB4C';
 const API_URL = `https://api.jsonbin.io/v3/b/${BIN_ID}`;
 
 // Fixed members
@@ -81,7 +81,7 @@ function BookClub() {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
-          'X-Master-Key': API_KEY,
+          'X-Access-Key': API_KEY,
         },
         body: JSON.stringify(data),
       });
@@ -98,7 +98,7 @@ function BookClub() {
       setError(null);
       const response = await fetch(`${API_URL}/latest`, {
         headers: {
-          'X-Master-Key': API_KEY,
+          'X-Access-Key': API_KEY,
         },
       });
       if (!response.ok) {
@@ -154,7 +154,7 @@ function BookClub() {
       // Pull latest data
       const response = await fetch(`${API_URL}/latest`, {
         headers: {
-          'X-Master-Key': API_KEY,
+          'X-Access-Key': API_KEY,
         },
       });
       if (!response.ok) throw new Error('Failed to fetch latest data');
@@ -169,7 +169,7 @@ function BookClub() {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
-          'X-Master-Key': API_KEY,
+          'X-Access-Key': API_KEY,
         },
         body: JSON.stringify(updatedData),
       });
